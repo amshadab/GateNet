@@ -1,6 +1,8 @@
 import os
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
+from models import Base
+from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
 
@@ -17,3 +19,8 @@ DATABASE_URL=(
 )
 
 engine=create_engine(DATABASE_URL)
+Base.metadata.create_all(engine)
+SessionLocal=sessionmaker(bind=engine)
+
+def get_session():
+    return SessionLocal()
