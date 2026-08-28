@@ -1,3 +1,5 @@
 .venv/
 backend/.env
+backend/__pycache__
+backend/schemas/__pycache__
 backend/test_db.py
