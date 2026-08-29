@@ -1,8 +1,10 @@
 from fastapi import FastAPI,Depends
 from database import get_session
-from schemas.user_schema import UserRegister
+from controllers.user_controller import user_router
 
 app=FastAPI()
+
+app.include_router(user_router)
 
 @app.get("/")
 def home(session=Depends(get_session)):
