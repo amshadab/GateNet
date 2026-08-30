@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from schemas.user_schema import UserRegister,UserResponse
+from schemas.user_schema import UserRegister,UserResponse,UserLogin
 from database import get_session
 from sqlalchemy.exc import SQLAlchemyError
-from services.user_service import create_user
-from exceptions.user_exception import UsernameAlreadyExistsException
+from services.user_service import create_user,login_user
+from exceptions.user_exception import UsernameAlreadyExistsException,InvalidCredentialsException
 
 user_router = APIRouter(prefix="/user", tags=["User"])
 
@@ -23,5 +23,23 @@ def register_user(user: UserRegister, session:Session=Depends(get_session)):
         session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database error Occured",
+            detail="Database error Occurred",
+        )
+
+@user_router.post("/login",response_model=UserResponse,status_code=status.HTTP_202_ACCEPTED)
+def login(user:UserLogin,session:Session=Depends(get_session)):
+    try:
+        logged_in_user=login_user(user,session)
+        return logged_in_user
+    except InvalidCredentialsException as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e)
+        )
+    except SQLAlchemyError:
+        session.rollback()
+        
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error Occurred"
         )

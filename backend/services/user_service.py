@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from utils.security import hash_password
+from utils.security import hash_password,verify_password
 from models import User
-from exceptions.user_exception import UsernameAlreadyExistsException
+from exceptions.user_exception import UsernameAlreadyExistsException,InvalidCredentialsException
 
 def create_user(user_data,session:Session):
     
@@ -24,4 +24,14 @@ def create_user(user_data,session:Session):
     session.refresh(new_user)
     
     return new_user
+
+def login_user(user_data,session:Session):
+    user=session.query(User).filter(User.username==user_data.username).first()
     
+    if not user:
+        raise InvalidCredentialsException()
+    
+    if not verify_password(user_data.password,user.password_hash):
+        raise InvalidCredentialsException()
+    
+    return user
