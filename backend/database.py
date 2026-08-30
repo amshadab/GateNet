@@ -23,5 +23,5 @@ Base.metadata.create_all(engine)
 SessionLocal=sessionmaker(bind=engine)
 
 def get_session():
-    with SessionLocal as session:
+    with SessionLocal() as session:
         yield session

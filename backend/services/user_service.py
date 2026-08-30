@@ -1,8 +1,15 @@
 from sqlalchemy.orm import Session
 from utils.security import hash_password
 from models import User
+from exceptions.user_exception import UsernameAlreadyExistsException
 
 def create_user(user_data,session:Session):
+    
+    existing_user=session.query(User).filter(User.username==user_data.username).first()
+    
+    if existing_user:
+        raise UsernameAlreadyExistsException()
+    
     hashed_password=hash_password(user_data.password)
     
     new_user=User(
@@ -14,4 +21,7 @@ def create_user(user_data,session:Session):
     
     session.add(new_user)
     session.commit()
+    session.refresh(new_user)
+    
+    return new_user
     
