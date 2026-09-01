@@ -39,5 +39,11 @@ class UserLogin(BaseModel):
         return value
     
     
+class UserLoginResponse(BaseModel):
+    access_token:str
+    token_type:str
+    user:UserResponse
+    
+    
 
     

@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status,Response
 from sqlalchemy.orm import Session
-from schemas.user_schema import UserRegister,UserResponse,UserLogin
+from schemas.user_schema import UserRegister,UserResponse,UserLogin,UserLoginResponse
 from database import get_session
 from sqlalchemy.exc import SQLAlchemyError
 from services.user_service import create_user,login_user
@@ -26,11 +26,24 @@ def register_user(user: UserRegister, session:Session=Depends(get_session)):
             detail="Database error Occurred",
         )
 
-@user_router.post("/login",response_model=UserResponse,status_code=status.HTTP_202_ACCEPTED)
-def login(user:UserLogin,session:Session=Depends(get_session)):
+@user_router.post("/login",response_model=UserLoginResponse,status_code=status.HTTP_202_ACCEPTED)
+def login(user:UserLogin,response:Response,session:Session=Depends(get_session)):
     try:
-        logged_in_user=login_user(user,session)
-        return logged_in_user
+        logged_in_user,access_token=login_user(user,session)
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=False,
+            samesite="lax",
+            max_age=30*60
+        )
+        return {
+            "access_token":access_token,
+            "token_type":"bearer",
+            "user":logged_in_user
+        }
+    
     except InvalidCredentialsException as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
