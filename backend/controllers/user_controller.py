@@ -5,6 +5,8 @@ from database import get_session
 from sqlalchemy.exc import SQLAlchemyError
 from services.user_service import create_user,login_user
 from exceptions.user_exception import UsernameAlreadyExistsException,InvalidCredentialsException
+from models import User
+from dependencies.auth_dependency import get_current_user
 
 user_router = APIRouter(prefix="/user", tags=["User"])
 
@@ -56,3 +58,8 @@ def login(user:UserLogin,response:Response,session:Session=Depends(get_session))
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error Occurred"
         )
+
+
+@user_router.get("/profile")
+def get_profile(current_user:User=Depends(get_current_user)):
+    return current_user
