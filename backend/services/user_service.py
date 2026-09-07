@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from utils.security import hash_password,verify_password,create_access_token
 from models import User
-from exceptions.user_exception import UsernameAlreadyExistsException,InvalidCredentialsException
+from exceptions.user_exception import UsernameAlreadyExistsException,InvalidCredentialsException,UserNotApprovedException
 
 def create_user(user_data,session:Session):
     
@@ -33,6 +33,9 @@ def login_user(user_data,session:Session):
     
     if not verify_password(user_data.password,user.password_hash):
         raise InvalidCredentialsException()
+    
+    if user.status!="APPROVED":
+        raise UserNotApprovedException()
     
     access_token=create_access_token(user_id=user.id,username=user.username)
     

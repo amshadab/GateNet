@@ -5,3 +5,7 @@ class UsernameAlreadyExistsException(Exception):
 class InvalidCredentialsException(Exception):
     def __init__(self):
         super().__init__("Invalid Username or Password")
+        
+class UserNotApprovedException(Exception):
+    def __init__(self):
+        super().__init__("User account is not approved")
