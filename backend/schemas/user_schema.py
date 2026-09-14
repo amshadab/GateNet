@@ -45,5 +45,19 @@ class UserLoginResponse(BaseModel):
     user:UserResponse
     
     
-
+class UserProfileUpdate(BaseModel):
+    f_name:str=Field(min_length=2,max_length=100)
+    l_name:str=Field(min_length=2,max_length=100)
     
+    @field_validator("f_name","l_name")
+    @classmethod
+    def validate_text(cls, value:str):
+        value =value.strip()
+        if not value:
+            raise ValueError("Field cannot be Empty")
+        
+        return value
+    
+class ChangePassword(BaseModel):
+    old_password:str=Field(min_length=8,max_length=128)
+    new_password:str=Field(min_length=8,max_length=128)

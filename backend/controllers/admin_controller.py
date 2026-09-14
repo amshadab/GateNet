@@ -12,6 +12,7 @@ from services.admin_service import (
     suspend_user,
     activate_user,
     get_all_users,
+    get_pending_users
 )
 
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])
@@ -118,3 +119,12 @@ def activate(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error occurred",
         )
+
+@admin_router.get("/users/pending",response_model=list[AdminUserResponse])
+def get_pending(current_admin:User=Depends(get_current_admin),session:Session=Depends(get_session)):
+    try:
+        return get_pending_users(session)
+    except SQLAlchemyError:
+        session.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred",)

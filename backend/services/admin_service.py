@@ -76,3 +76,6 @@ def activate_user(user_id: int, session: Session):
     session.refresh(user)
 
     return user
+
+def get_pending_users(session:Session):
+    return session.query(User).filter( User.role == "USER",User.status=="PENDING").all()

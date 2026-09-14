@@ -1,9 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
-from schemas.user_schema import UserRegister, UserResponse, UserLogin, UserLoginResponse
+from schemas.user_schema import (
+    UserRegister,
+    UserResponse,
+    UserLogin,
+    UserLoginResponse,
+    UserProfileUpdate,
+    ChangePassword
+)
 from database import get_session
 from sqlalchemy.exc import SQLAlchemyError
-from services.user_service import create_user, login_user
+from services.user_service import create_user, login_user, update_user_profile,change_user_password
 from exceptions.user_exception import (
     UsernameAlreadyExistsException,
     InvalidCredentialsException,
@@ -68,6 +75,43 @@ def login(user: UserLogin, response: Response, session: Session = Depends(get_se
         )
 
 
-@user_router.get("/profile",response_model=UserResponse)
+@user_router.get("/profile", response_model=UserResponse)
 def get_profile(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@user_router.put("/profile", response_model=UserResponse)
+def update_profile(
+    user_data: UserProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    try:
+        return update_user_profile(current_user, user_data, session)
+    except SQLAlchemyError:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred",
+        )
+
+@user_router.put("/change-password")
+def change_password(user_data:ChangePassword,current_user:User=Depends(get_current_user),session:Session=Depends(get_session)):
+    try:
+        change_user_password(current_user,user_data,session)
+        return {
+            "message":"Password change successfully"
+        }
+        
+    except InvalidCredentialsException as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e)
+        )
+    except SQLAlchemyError:
+        session.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred"
+        )

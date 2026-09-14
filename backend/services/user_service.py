@@ -50,3 +50,21 @@ def login_user(user_data, session: Session):
     access_token = create_access_token(user_id=user.id, username=user.username)
 
     return user, access_token
+
+def update_user_profile(user:User, user_data,session):
+    user.f_name=user_data.f_name
+    user.l_name=user_data.l_name
+    
+    session.commit()
+    session.refresh(user)
+    return user
+
+def change_user_password(user:User,user_data,session):
+    if not verify_password(user_data.old_password,user.password_hash):
+        raise InvalidCredentialsException()
+    
+    user.password_hash=hash_password(user_data.new_password)
+    session.commit()
+    session.refresh(user)
+    return user
+    
