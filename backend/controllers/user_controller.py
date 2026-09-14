@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
+from datetime import datetime, timezone
 from schemas.user_schema import (
     UserRegister,
     UserResponse,
@@ -17,7 +18,7 @@ from exceptions.user_exception import (
     UserNotApprovedException,
 )
 from models import User
-from dependencies.auth_dependency import get_current_user
+from dependencies.auth_dependency import get_current_user,get_current_user_session
 
 user_router = APIRouter(prefix="/user", tags=["User"])
 
@@ -115,3 +116,14 @@ def change_password(user_data:ChangePassword,current_user:User=Depends(get_curre
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error occurred"
         )
+        
+@user_router.post("/logout")
+def logout(response:Response,current_session=Depends(get_current_user_session),session:Session=Depends(get_session)):
+    current_session.logout_time= datetime.now(timezone.utc)
+    
+    session.commit()
+    response.delete_cookie(key="access_token")
+    
+    return {
+        "message":"Logout Successful"
+    }
