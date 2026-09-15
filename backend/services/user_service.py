@@ -6,6 +6,7 @@ from exceptions.user_exception import (
     InvalidCredentialsException,
     UserNotApprovedException,
 )
+from services.activity_service import create_activity_log
 
 
 def create_user(user_data, session: Session):
@@ -39,9 +40,25 @@ def login_user(user_data, session: Session):
     user = session.query(User).filter(User.username == user_data.username).first()
 
     if not user:
+        create_activity_log(
+        user_id=None,
+        session_id=None,
+        activity_type="FAILED_LOGIN",
+        description="Login failed: username not found",
+        ip_address=None,
+        session=session,
+    )
         raise InvalidCredentialsException()
 
     if not verify_password(user_data.password, user.password_hash):
+        create_activity_log(
+        user_id=user.id,
+        session_id=None,
+        activity_type="FAILED_LOGIN",
+        description="Login failed: incorrect password",
+        ip_address=None,
+        session=session,
+    )
         raise InvalidCredentialsException()
 
     if user.status != "APPROVED":
@@ -50,7 +67,15 @@ def login_user(user_data, session: Session):
     new_session = UserSession(user_id=user.id)
     session.add(new_session)
     session.commit()
-
+    
+    create_activity_log(
+        user_id=user.id,
+        session_id=session.id,
+        activity_type="LOGIN",
+        description="User logged in Successfully",
+        ip_address=new_session.ip_address,
+        session=session
+    )
     access_token = create_access_token(user_id=user.id, username=user.username,session_id=new_session.id)
     
     return user,access_token

@@ -31,3 +31,18 @@ class UserSession(Base):
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
     logout_time = Column(DateTime(timezone=True), nullable=True)
+
+
+class ActivityLog(Base):
+    __tablename__ = "activity_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    session_id = Column(Integer, ForeignKey("user_sessions.id"), nullable=True)
+    activity_type = Column(String(50), nullable=False)
+    description = Column(String(255), nullable=True)
+    ip_address = Column(String(45), nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc)
+    )

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
+from services.activity_service import create_activity_log
 from datetime import datetime, timezone
 from schemas.user_schema import (
     UserRegister,
@@ -7,18 +8,23 @@ from schemas.user_schema import (
     UserLogin,
     UserLoginResponse,
     UserProfileUpdate,
-    ChangePassword
+    ChangePassword,
 )
 from database import get_session
 from sqlalchemy.exc import SQLAlchemyError
-from services.user_service import create_user, login_user, update_user_profile,change_user_password
+from services.user_service import (
+    create_user,
+    login_user,
+    update_user_profile,
+    change_user_password,
+)
 from exceptions.user_exception import (
     UsernameAlreadyExistsException,
     InvalidCredentialsException,
     UserNotApprovedException,
 )
 from models import User
-from dependencies.auth_dependency import get_current_user,get_current_user_session
+from dependencies.auth_dependency import get_current_user, get_current_user_session
 
 user_router = APIRouter(prefix="/user", tags=["User"])
 
@@ -96,34 +102,44 @@ def update_profile(
             detail="Database error occurred",
         )
 
+
 @user_router.put("/change-password")
-def change_password(user_data:ChangePassword,current_user:User=Depends(get_current_user),session:Session=Depends(get_session)):
+def change_password(
+    user_data: ChangePassword,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
     try:
-        change_user_password(current_user,user_data,session)
-        return {
-            "message":"Password change successfully"
-        }
-        
+        change_user_password(current_user, user_data, session)
+        return {"message": "Password change successfully"}
+
     except InvalidCredentialsException as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
     except SQLAlchemyError:
         session.rollback()
 
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database error occurred"
+            detail="Database error occurred",
         )
-        
+
+
 @user_router.post("/logout")
-def logout(response:Response,current_session=Depends(get_current_user_session),session:Session=Depends(get_session)):
-    current_session.logout_time= datetime.now(timezone.utc)
-    
-    session.commit()
+def logout(
+    response: Response,
+    current_session=Depends(get_current_user_session),
+    session: Session = Depends(get_session),
+):
+    current_session.logout_time = datetime.now(timezone.utc)
+
+    create_activity_log(
+        user_id=current_session.user_id,
+        session_id=current_session.id,
+        activity_type="LOGOUT",
+        description="User logged out",
+        ip_address=current_session.ip_address,
+        session=session,
+    )
     response.delete_cookie(key="access_token")
-    
-    return {
-        "message":"Logout Successful"
-    }
+
+    return {"message": "Logout Successful"}
