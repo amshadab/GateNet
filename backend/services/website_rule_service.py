@@ -1,8 +1,22 @@
 from sqlalchemy.orm import Session
 from models import WebsiteRule, User, UserWebsiteRule
+from exceptions.website_rule_exception import (
+    WebsiteRuleAlreadyExistsException,
+    WebsiteRuleNotFoundException,
+    UserWebsiteRuleAlreadyExistsException,
+    UserNotFoundForWebsiteRuleException,
+)
 
 
 def create_website_rules(domain: str, action: str, session: Session):
+    
+    existing_rule=(
+        session.query(WebsiteRule).filter(WebsiteRule.domain==domain).first()
+    )
+    
+    if existing_rule:
+        raise WebsiteRuleAlreadyExistsException()
+    
     website_rule = WebsiteRule(
         domain=domain,
         action=action,
@@ -21,14 +35,14 @@ def create_user_website_rule(
     user = session.query(User).filter(User.id == user_id).first()
 
     if user is None:
-        raise ValueError("User not found")
+        raise UserNotFoundForWebsiteRuleException()
 
     website_rule = (
         session.query(WebsiteRule).filter(WebsiteRule.id == website_rule_id).first()
     )
 
     if website_rule is None:
-        raise ValueError("Website rule not found")
+        raise WebsiteRuleNotFoundException()
 
     existing_rule = (
         session.query(UserWebsiteRule)
@@ -40,12 +54,10 @@ def create_user_website_rule(
     )
 
     if existing_rule:
-        raise ValueError("User already has a rule for this website")
-    
-    user_website_rule=UserWebsiteRule(
-        user_id=user_id,
-        website_rule_id=website_rule_id,
-        action=action
+        raise UserWebsiteRuleAlreadyExistsException()
+
+    user_website_rule = UserWebsiteRule(
+        user_id=user_id, website_rule_id=website_rule_id, action=action
     )
     session.add(user_website_rule)
     session.commit()

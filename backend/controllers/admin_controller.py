@@ -14,8 +14,14 @@ from services.admin_service import (
     get_all_users,
     get_pending_users,
 )
-from services.website_rule_service import create_website_rules
-from schemas.website_rule_schema import WebsiteRuleCreate
+from exceptions.website_rule_exception import (
+    WebsiteRuleAlreadyExistsException,
+    WebsiteRuleNotFoundException,
+    UserNotFoundForWebsiteRuleException,
+    UserWebsiteRuleAlreadyExistsException,
+)
+from services.website_rule_service import create_website_rules, create_user_website_rule
+from schemas.website_rule_schema import WebsiteRuleCreate, UserWebsiteRuleCreate
 
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -137,10 +143,50 @@ def get_pending(
             detail="Database error occurred",
         )
 
+
 @admin_router.post("/website-rules")
-def create_global_website_rule(rule_data:WebsiteRuleCreate,current_admin=Depends(get_current_admin),session:Session=Depends(get_session)):
-    return create_website_rules(
-        domain=rule_data.domain,
-        action=rule_data.action,
-        session=session
-    )
+def create_global_website_rule(
+    rule_data: WebsiteRuleCreate,
+    current_admin=Depends(get_current_admin),
+    session: Session = Depends(get_session),
+):
+    try:
+        return create_website_rules(
+            domain=rule_data.domain, action=rule_data.action, session=session
+        )
+    except WebsiteRuleAlreadyExistsException as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except SQLAlchemyError:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred",
+        )
+
+
+@admin_router.post("/user-website-rules")
+def create_user_website_rule_for_user(
+    rule_data: UserWebsiteRuleCreate,
+    current_admin=Depends(get_current_admin),
+    session: Session = Depends(get_session),
+):
+    try:
+
+        return create_user_website_rule(
+            user_id=rule_data.user_id,
+            website_rule_id=rule_data.website_rule_id,
+            action=rule_data.action,
+            session=session,
+        )
+    except UserNotFoundForWebsiteRuleException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except WebsiteRuleNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except UserWebsiteRuleAlreadyExistsException as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+    except SQLAlchemyError:
+        session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred",
+        )
