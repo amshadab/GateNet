@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime,ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime,ForeignKey,UniqueConstraint
 from sqlalchemy.orm import declarative_base
 from datetime import datetime, timezone
 
@@ -45,4 +45,47 @@ class ActivityLog(Base):
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc)
+    )
+    
+class WebsiteRule(Base):
+    __tablename__="website_rules"
+    
+    id=Column(Integer,primary_key=True,index=True)
+    domain=Column(String(255),unique=True,nullable=False)
+    action=Column(String(10),nullable=False)
+    created_at=Column(
+        DateTime(timezone=True),
+        default=lambda:datetime.now(timezone.utc)
+    )
+
+class UserWebsiteRule(Base):
+    __tablename__ = "user_website_rules"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
+
+    website_rule_id = Column(
+        Integer,
+        ForeignKey("website_rules.id"),
+        nullable=False
+    )
+
+    action = Column(String(10), nullable=False)
+
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "website_rule_id",
+            name="uq_user_website_rule"
+        ),
     )

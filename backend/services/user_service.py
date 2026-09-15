@@ -70,7 +70,7 @@ def login_user(user_data, session: Session):
     
     create_activity_log(
         user_id=user.id,
-        session_id=session.id,
+        session_id=new_session.id,
         activity_type="LOGIN",
         description="User logged in Successfully",
         ip_address=new_session.ip_address,
