@@ -40,3 +40,16 @@ class UserWebsiteRuleCreate(BaseModel):
             raise ValueError("Action must be ALLOW or BLOCK")
 
         return value
+
+class WebsiteRuleUpdate(BaseModel):
+    action:str
+    
+    @field_validator("action")
+    @classmethod
+    def validate_action(cls, value):
+        value = value.strip().upper()
+
+        if value not in {"ALLOW", "BLOCK"}:
+            raise ValueError("Action must be ALLOW or BLOCK")
+
+        return value
