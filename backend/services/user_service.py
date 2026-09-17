@@ -36,38 +36,50 @@ def create_user(user_data, session: Session):
     return new_user
 
 
-def login_user(user_data, session: Session):
+def login_user(
+    user_data,
+    ip_address,
+    mac_address,
+    hostname,
+    session: Session
+):
     user = session.query(User).filter(User.username == user_data.username).first()
 
     if not user:
         create_activity_log(
-        user_id=None,
-        session_id=None,
-        activity_type="FAILED_LOGIN",
-        description="Login failed: username not found",
-        ip_address=None,
-        session=session,
-    )
+            user_id=None,
+            session_id=None,
+            activity_type="FAILED_LOGIN",
+            description="Login failed: username not found",
+            ip_address=None,
+            session=session,
+        )
         raise InvalidCredentialsException()
 
     if not verify_password(user_data.password, user.password_hash):
         create_activity_log(
-        user_id=user.id,
-        session_id=None,
-        activity_type="FAILED_LOGIN",
-        description="Login failed: incorrect password",
-        ip_address=None,
-        session=session,
-    )
+            user_id=user.id,
+            session_id=None,
+            activity_type="FAILED_LOGIN",
+            description="Login failed: incorrect password",
+            ip_address=None,
+            session=session,
+        )
         raise InvalidCredentialsException()
 
     if user.status != "APPROVED":
         raise UserNotApprovedException()
 
-    new_session = UserSession(user_id=user.id)
+    new_session = UserSession(
+        user_id=user.id,
+        ip_address=ip_address,
+        mac_address=mac_address,
+        hostname=hostname,
+    )
+
     session.add(new_session)
     session.commit()
-    
+
     create_activity_log(
         user_id=user.id,
         session_id=new_session.id,
@@ -76,9 +88,14 @@ def login_user(user_data, session: Session):
         ip_address=new_session.ip_address,
         session=session
     )
-    access_token = create_access_token(user_id=user.id, username=user.username,session_id=new_session.id)
-    
-    return user,access_token
+
+    access_token = create_access_token(
+        user_id=user.id,
+        username=user.username,
+        session_id=new_session.id
+    )
+
+    return user, access_token
 
 
 def update_user_profile(user: User, user_data, session):

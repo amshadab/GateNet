@@ -16,3 +16,7 @@ class UserWebsiteRuleAlreadyExistsException(Exception):
 class UserNotFoundForWebsiteRuleException(Exception):
     def __init__(self):
         super().__init__("User not found")
+
+class UserWebsiteRuleNotFoundException(Exception):
+    def __init__(self):
+        super().__init__("User website rule not found")

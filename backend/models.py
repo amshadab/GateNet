@@ -27,6 +27,7 @@ class UserSession(Base):
     user_id = Column(Integer,ForeignKey("users.id"), nullable=False)
     mac_address = Column(String(17), nullable=True)
     ip_address = Column(String(45), nullable=True)
+    hostname = Column(String(100), nullable=True)
     login_time = Column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )

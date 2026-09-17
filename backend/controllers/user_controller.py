@@ -54,7 +54,13 @@ def register_user(user: UserRegister, session: Session = Depends(get_session)):
 )
 def login(user: UserLogin, response: Response, session: Session = Depends(get_session)):
     try:
-        logged_in_user, access_token = login_user(user, session)
+        logged_in_user, access_token = login_user(
+            user,
+            ip_address=None,
+            mac_address=None,
+            hostname=None,
+            session=session,
+        )
         response.set_cookie(
             key="access_token",
             value=access_token,
